@@ -51,8 +51,8 @@ class SineEnv : public SynthVoice {
 
     createInternalTriggerParameter("amplitude", 0.3, 0.0, 1.0);
     createInternalTriggerParameter("frequency", 60, 20, 5000);
-    createInternalTriggerParameter("attackTime", 1.0, 0.01, 3.0);
-    createInternalTriggerParameter("releaseTime", 3.0, 0.1, 10.0);
+    createInternalTriggerParameter("attackTime", 0.1, 0.01, 3.0);
+    createInternalTriggerParameter("releaseTime", 0.1, 0.1, 10.0);
     createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
   }
 
@@ -127,7 +127,7 @@ class MyApp : public App {
     imguiInit();
 
     // Play example sequence. Comment this line to start from scratch
-    synthManager.synthSequencer().playSequence("synth1.synthSequence");
+    // synthManager.synthSequencer().playSequence("synth1.synthSequence");
     synthManager.synthRecorder().verbose(true);
   }
 
@@ -156,6 +156,8 @@ class MyApp : public App {
 
   // Whenever a key is pressed, this function is called
   bool onKeyDown(Keyboard const& k) override {
+    // const float A4 = 432.f;
+    const float A4 = 440.f;
     if (ParameterGUI::usingKeyboard()) {  // Ignore keys if GUI is using
                                           // keyboard
       return true;
@@ -169,7 +171,7 @@ class MyApp : public App {
       int midiNote = asciiToMIDI(k.key());
       if (midiNote > 0) {
         synthManager.voice()->setInternalParameterValue(
-            "frequency", ::pow(2.f, (midiNote - 69.f) / 12.f) * 432.f);
+            "frequency", ::pow(2.f, (midiNote - 69.f) / 12.f) * A4);
         synthManager.triggerOn(midiNote);
       }
     }
@@ -196,5 +198,6 @@ int main() {
   app.configureAudio(48000., 512, 2, 0);
 
   app.start();
+
   return 0;
 }

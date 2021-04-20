@@ -277,15 +277,15 @@ public:
     playNote(G4 * offset, 9, 0.5, 0.4);
     playNote(G4 * offset, 9.67, 0.2, 0.5);
     playNote(E4 * offset, 10, 0.5, 0.4);
-    playNote(F4 * offset, 10.67, 0.2, 0.5);
+    playNote(E4 * offset, 10.67, 0.2, 0.5);
     playNote(C4 * offset, 11, 0.5, 0.4);
     playNote(C4 * offset, 11.67, 0.2, 0.5);
 
-    playNote(G4 * offset, 4, 0.5, 0.2);
-    playNote(F4 * offset, 4.67, 0.5, 0.3);
-    playNote(E4 * offset, 5, 0.5, 0.4);
-    playNote(D4 * offset, 5.67, 0.2, 0.5);
-    playNote(C4 * offset, 6, 1, 0.5);
+    playNote(G4 * offset, 12, 0.5, 0.2);
+    playNote(F4 * offset, 12.67, 0.5, 0.3);
+    playNote(E4 * offset, 13, 0.5, 0.4);
+    playNote(D4 * offset, 13.67, 0.2, 0.5);
+    playNote(C4 * offset, 14, 1, 0.5);
   }
 };
 
