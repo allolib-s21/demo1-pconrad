@@ -165,11 +165,11 @@ public:
     // We have the mesh be a sphere
     addDisc(mMesh, 1.0, 30);
 
-    createInternalTriggerParameter("freq", 440, 10, 4000.0);
     createInternalTriggerParameter("amplitude", 0.5, 0.0, 1.0);
+    createInternalTriggerParameter("freq", 440, 10, 4000.0);
     createInternalTriggerParameter("attackTime", 0.1, 0.01, 3.0);
     createInternalTriggerParameter("releaseTime", 0.1, 0.1, 10.0);
-    createInternalTriggerParameter("sustain", 0.75, 0.1, 1.0); // Unused
+    createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
 
     // FM index
     createInternalTriggerParameter("idx1", 0.01, 0.0, 10.0);
@@ -178,8 +178,7 @@ public:
 
     createInternalTriggerParameter("carMul", 1, 0.0, 20.0);
     createInternalTriggerParameter("modMul", 1.0007, 0.0, 20.0);
-
-    createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
+    createInternalTriggerParameter("sustain", 0.75, 0.1, 1.0); // Unused
   }
 
   //
@@ -460,12 +459,12 @@ public:
   bool
   onKeyUp(Keyboard const &k) override
   {
-    int midiNote = asciiToMIDI(k.key());
-    if (midiNote > 0)
-    {
-      synthManager.triggerOff(midiNote);
-    }
-    return true;
+    // int midiNote = asciiToMIDI(k.key());
+    // if (midiNote > 0)
+    // {
+    //   synthManager.triggerOff(midiNote);
+    // }
+    // return true;
   }
 
   void onExit() override { imguiShutdown(); }
@@ -480,15 +479,25 @@ public:
 
     case INSTR_SQUARE:
       voice = synthManager.synth().getVoice<SquareWave>();
-          // amp, freq, attack, release, pan
-
-      voice->setTriggerParams({amp, freq, 0.1, 0.1, 0.0});
+      voice->setInternalParameterValue("amplitude", amp);
+      voice->setInternalParameterValue("frequency", freq);
+      voice->setInternalParameterValue("attackTime", 0.1);
+      voice->setInternalParameterValue("releaseTime", 0.1);
+      voice->setInternalParameterValue("pan", -1.0);
       break;
 
     case INSTR_FM:
       voice = synthManager.synth().getVoice<FM>();
-         
-      voice->setTriggerParams({amp, freq, 0.1, 0.1, 0.0});
+
+      voice->setInternalParameterValue("amplitude", amp);
+      voice->setInternalParameterValue("freq", freq);
+      voice->setInternalParameterValue("attackTime", 0.1);
+      voice->setInternalParameterValue("releaseTime", 0.1);
+      voice->setInternalParameterValue("pan", 1.0);
+
+      break;
+    default:
+      voice = nullptr;
       break;
     }
     synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
