@@ -14,35 +14,67 @@
 
 #include <cassert>
 #include <vector>
+#include <cmath> // std::abs
 
 #include "SimpleCompressor/src/LookAheadGainReduction.h"
 #include "SimpleCompressor/src/LookAheadGainReduction.cpp"
 #include "SimpleCompressor/src/GainReductionComputer.h"
 #include "SimpleCompressor/src/GainReductionComputer.cpp"
 
-
-
 // using namespace gam;
 using namespace al;
 
-
 const int BLOCK_SIZE = 128;
 
-float linearToDecibels(float linear) {
+float linearToDecibels(float linear)
+{
   return 20.f * std::log10(std::abs(linear));
 }
 
-float decibelsToLinear(float decibels) {
+float decibelsToLinear(float decibels)
+{
   return std::pow(10.f, decibels / 20.f);
 }
 
+class CompressorStats
+{
+public:
+  float pre_peak;
+  float duck;
+  float post_peak;
+  CompressorStats(float pre_peak, float duck, float post_peak)
+  {
+    this->set(pre_peak, duck, post_peak);
+  };
+  void set(float pre_peak, float duck, float post_peak)
+  {
+    this->pre_peak = pre_peak;
+    this->duck = duck;
+    this->post_peak = post_peak;
+  };
+};
+
+bool approxEqual(float l, float r)
+{
+  return std::abs(l - r) < 0.0001f;
+}
+
+bool operator==(const CompressorStats &l, const CompressorStats &r)
+{
+  return approxEqual(l.pre_peak, r.pre_peak) && approxEqual(l.duck, r.duck) && approxEqual(l.post_peak, r.post_peak);
+}
+
 template <int block_size>
-class CompressorPlugin {
-  public:
+class CompressorPlugin
+{
+public:
   bool useLookAhead = false;
   bool debug = true;
 
-  CompressorPlugin() {
+  CompressorStats previousStats = CompressorStats(0.0f, 1.0f, 0.0f);
+
+  CompressorPlugin()
+  {
     gain.prepare(48000.);
     gain.setThreshold(-5.f);
     gain.setRatio(100.f);
@@ -53,26 +85,32 @@ class CompressorPlugin {
     lookahead.prepare(48000., 2 * block_size);
   };
 
-  AudioIOData& operator()(AudioIOData& io) {
+  AudioIOData &operator()(AudioIOData &io)
+  {
     // TODO get look-ahead working
     io.frame(0);
-    for (int i = 0; io() && i < BLOCK_SIZE; i++) {
+    for (int i = 0; io() && i < BLOCK_SIZE; i++)
+    {
       sidechain_buf[i] = std::max(std::abs(io.out(0)), std::abs(io.out(1)));
     }
 
-    if (useLookAhead) {
+    if (useLookAhead)
+    {
       gain.computeGainInDecibelsFromSidechainSignal(sidechain_buf, gain_buf, block_size);
-    } else {
+    }
+    else
+    {
       gain.computeLinearGainFromSidechainSignal(sidechain_buf, gain_buf, block_size);
     }
 
-
-    if (useLookAhead) {
+    if (useLookAhead)
+    {
       lookahead.pushSamples(gain_buf, block_size);
       lookahead.process();
       lookahead.readSamples(look_buf, block_size);
 
-      for (int i = 0; i < block_size; i++) {
+      for (int i = 0; i < block_size; i++)
+      {
         gain_buf[i] = decibelsToLinear(look_buf[i]);
       }
     }
@@ -81,7 +119,8 @@ class CompressorPlugin {
     float duck = 1;
     float post_peak = 0;
     io.frame(0);
-    for (int i = 0; io() && i < BLOCK_SIZE; i++) {
+    for (int i = 0; io() && i < BLOCK_SIZE; i++)
+    {
       pre_peak = std::max(pre_peak, std::abs(io.out(0)));
       pre_peak = std::max(pre_peak, std::abs(io.out(1)));
       duck = std::min(duck, gain_buf[i]);
@@ -91,16 +130,23 @@ class CompressorPlugin {
       post_peak = std::max(post_peak, std::abs(io.out(1)));
     }
 
-    if (debug) {
-      std::cout << "pre_peak: " << linearToDecibels(pre_peak) << " dB" << std::endl;
-      std::cout << "compress: " << linearToDecibels(duck) << " dB" << std::endl;
-      std::cout << "post_peak: " << linearToDecibels(post_peak) << " dB" << std::endl;
+    if (debug)
+    {
+      CompressorStats currentStats(pre_peak, duck, post_peak);
+      if (!(currentStats == previousStats))
+      {
+        std::cout << std::fixed << std::setprecision(2);
+        std::cout << "pre_peak:  " << std::setw(10) << linearToDecibels(pre_peak) << " dB  "
+                  << "compress:  " << std::setw(10) << linearToDecibels(duck) << " dB  "
+                  << "post_peak: " << std::setw(10) << linearToDecibels(post_peak) << " dB" << std::endl;
+        previousStats = currentStats;
+      }
     }
 
     return io;
   }
 
-  private:
+private:
   GainReductionComputer gain;
   LookAheadGainReduction lookahead;
 
@@ -108,7 +154,6 @@ class CompressorPlugin {
   float gain_buf[block_size];
   float look_buf[block_size];
 };
-
 
 enum Instrument
 {
@@ -433,6 +478,7 @@ public:
 
   CompressorPlugin<BLOCK_SIZE> compressor;
 
+  bool useCompressor = true;
 
   // This function is called right after the window is created
   // It provides a grphics context to initialize ParameterGUI
@@ -457,7 +503,8 @@ public:
   void onSound(AudioIOData &io) override
   {
     synthManager.render(io); // Render audio
-    compressor(io);
+    if (useCompressor)
+      compressor(io);
   }
 
   void onAnimate(double dt) override
@@ -491,6 +538,19 @@ public:
 
     switch (k.key())
     {
+
+    case '=':
+      std::cout << "= pressed!" << std::endl;
+      useCompressor = !useCompressor;
+      std::cout << "useCompressor=" << useCompressor << std::endl;
+      return false;
+
+    case '-':
+      std::cout << "- pressed!" << std::endl;
+      compressor.debug = !compressor.debug;
+      std::cout << "compressor.debug=" << compressor.debug << std::endl;
+      return false;
+
     case '1':
       std::cout << "1 pressed!" << std::endl;
       playSequenceFJ(1.0, 120);
@@ -565,6 +625,7 @@ public:
     //   synthManager.triggerOff(midiNote);
     // }
     // return true;
+    return true;
   }
 
   void onExit() override { imguiShutdown(); }
@@ -643,7 +704,7 @@ public:
 
     result->add(Note(E4 * offset, 0, 0.5, 0.1));
     result->add(Note(F4 * offset, 1, 0.5, 0.2));
-    result->add(Note(G4 * offset, 2, 1.0, 0.3));
+    result->add(Note(G4 * offset, 2, 1.0, 0.25));
 
     return result;
   }
@@ -654,11 +715,11 @@ public:
     Sequence *result = new Sequence(t);
 
     result->add(Note(G4 * offset, 0, 0.25, 0.2));
-    result->add(Note(A4 * offset, 0.5, 0.25, 0.3));
-    result->add(Note(G4 * offset, 1, 0.25, 0.4));
-    result->add(Note(F4 * offset, 1.5, 0.25, 0.45));
-    result->add(Note(E4 * offset, 2, 0.5, 0.5));
-    result->add(Note(C4 * offset, 3, 0.5, 0.25));
+    result->add(Note(A4 * offset, 0.5, 0.25, 0.24));
+    result->add(Note(G4 * offset, 1, 0.25, 0.28));
+    result->add(Note(F4 * offset, 1.5, 0.25, 0.32));
+    result->add(Note(E4 * offset, 2, 0.5, 0.36));
+    result->add(Note(C4 * offset, 3, 0.5, 0.24));
 
     return result;
   }
