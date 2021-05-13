@@ -4,3 +4,9 @@
 [submodule "al_ext"]
 	path = al_ext
 	url = https://github.com/AlloSphere-Research-Group/al_ext
+[submodule "src/Turtle1331"]
+	path = src/Turtle1331
+	url = https://github.com/allolib-s21/src-Turtle1331.git
+[submodule "src/Turtle1331/SimpleCompressor"]
+	path = src/Turtle1331/SimpleCompressor
+	url = git@github.com:DanielRudrich/SimpleCompressor.git
