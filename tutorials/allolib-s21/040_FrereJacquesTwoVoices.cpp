@@ -357,6 +357,12 @@ public:
   // The audio callback function. Called when audio hardware requires data
   void onSound(AudioIOData &io) override
   {
+    // THIS THIS THIS is where Andres suggests scheduling new events
+    // define a counter... when I get here add the number of samples in block
+    // when you get to target number, inject new sequence...
+
+    
+
     synthManager.render(io); // Render audio
   }
 

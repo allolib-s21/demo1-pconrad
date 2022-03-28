@@ -53,12 +53,15 @@ public:
         createInternalTriggerParameter("Pan1", 0.0, -1.0, 1.0);
         createInternalTriggerParameter("Pan2", 0.0, -1.0, 1.0);
         createInternalTriggerParameter("PanRise", 0.0, -1.0, 1.0); // range check
+        createInternalTriggerParameter("decay", 0.1, 0.0001, 1.0); // range check
+
     }
     
 //    void reset(){ env.reset(); }
 
     float operator() (){
-        return (*this)(noise()*env());
+        float temp =  noise()*env();
+        return (*this)( temp );
     }
     float operator() (float in){
         return delay(
@@ -99,6 +102,7 @@ public:
         mAmpEnv.reset();
         env.reset();
         delay.zero();
+      
     }
 
     virtual void onTriggerOff() override {
@@ -106,6 +110,7 @@ public:
     }
 
     void updateFromParameters() {
+        env.decay(getInternalParameterValue("decay"));
         mPanEnv.levels(getInternalParameterValue("Pan1"),
                        getInternalParameterValue("Pan2"),
                        getInternalParameterValue("Pan1"));
