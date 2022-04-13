@@ -111,7 +111,7 @@ class MyApp : public App {
   // GUI manager for SineEnv voices
   // The name provided determines the name of the directory
   // where the presets and sequences are stored
-  SynthGUIManager<SineEnv> synthManager{"SineEnv"};
+  SynthGUIManager<SineEnv> synthManager{"Foobar"};
 
   // This function is called right after the window is created
   // It provides a grphics context to initialize ParameterGUI
